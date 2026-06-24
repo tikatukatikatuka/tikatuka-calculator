@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>티카투카 승률 계산기 v1.1</title>
+    <title>티카투카 승률 계산기 v1.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
@@ -43,7 +43,7 @@
             <div>
                 <h1 class="text-2xl md:text-3xl font-black text-amber-500 flex items-center">
                     🎲 티카투카 승률 계산기 
-                    <span class="ml-3 px-2 py-0.5 bg-stone-700 text-stone-300 text-sm rounded-md font-bold tracking-widest">v1.1</span>
+                    <span class="ml-3 px-2 py-0.5 bg-stone-700 text-stone-300 text-sm rounded-md font-bold tracking-widest">v1.3</span>
                 </h1>
                 <p class="text-stone-400 text-xs md:text-sm mt-1">상황을 입력하면 AI가 최적의 수를 추천합니다.</p>
             </div>
@@ -86,13 +86,39 @@
                         턴 강제 변경
                     </button>
                 </div>
+
+                <!-- 화면 인식 자동화(Beta) 버튼 및 주의사항 -->
+                <div class="mt-4 pt-4 border-t border-stone-700">
+                    <button id="btnAutoCapture" onclick="toggleScreenCapture()" class="w-full bg-indigo-900 hover:bg-indigo-800 text-white text-xs md:text-sm px-3 py-2 rounded-lg font-bold transition shadow-md flex justify-center items-center gap-2">
+                        <span>📺 화면 인식 자동 입력 켜기 (Beta)</span>
+                    </button>
+                    <div class="mt-2 text-left text-[10px] md:text-xs text-amber-400/90 leading-tight">
+                        ⚠️ <b>화면공유 주의사항:</b> 게임 창을 안 움직인 상태, 즉 게임화면을 딱 켰을 때 처음 상태에서 화면공유를 해야 정상적으로 주사위가 인식됩니다.
+                    </div>
+                    
+                    <div id="videoPreviewContainer" class="hidden mt-3 rounded-lg overflow-hidden border-2 border-indigo-500 relative">
+                        <video id="screenVideo" autoplay muted class="w-full h-auto opacity-70"></video>
+                        <canvas id="captureCanvas" class="hidden"></canvas>
+                        <div class="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                            <span class="text-indigo-200 font-bold text-xs bg-black/60 px-2 py-1 rounded">인식 대기 중...</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- AI 추천 패널 -->
-            <div class="bg-stone-800 rounded-2xl p-4 md:p-5 border border-stone-700 shadow-lg flex-1 flex flex-col">
-                <h2 class="text-base md:text-lg font-bold text-stone-100 border-b border-stone-600 pb-2 mb-3 flex items-center">
-                    <span class="mr-2">🤖</span> AI 승률 및 최적 수 추천
-                </h2>
+            <div class="bg-stone-800 rounded-2xl p-4 md:p-5 border border-stone-700 shadow-lg flex-1 flex flex-col relative">
+                <div class="flex justify-between items-end border-b border-stone-600 pb-2 mb-3">
+                    <h2 class="text-base md:text-lg font-bold text-stone-100 flex items-center">
+                        <span class="mr-2">🤖</span> AI 추천
+                    </h2>
+                    <!-- 실시간 현재 승률 계기판 -->
+                    <div class="bg-stone-900 px-3 py-1.5 rounded-lg shadow-inner flex flex-col items-end">
+                        <span class="text-[10px] text-stone-400 leading-none mb-1">현재 게임 승률</span>
+                        <span id="currentGlobalWinRate" class="text-sm md:text-base font-black text-green-400 leading-none">50.0%</span>
+                    </div>
+                </div>
+                
                 <div id="aiRecommendation" class="text-xs md:text-sm text-stone-300 space-y-2 flex-1 overflow-y-auto">
                     주사위 숫자를 입력하면 AI가 승률이 가장 높은 배치 위치를 분석합니다.
                 </div>
@@ -146,14 +172,24 @@
                 <h3 class="text-lg md:text-xl font-bold text-stone-200 mb-4 flex items-center"><span class="mr-2">📝</span> 업데이트 내역</h3>
                 <ul class="space-y-4 text-xs md:text-sm border-l-2 border-stone-600 pl-4">
                     <li class="relative">
+                        <span class="absolute -left-[21px] top-1.5 w-2 h-2 bg-green-500 rounded-full"></span>
+                        <div class="mb-1"><span class="text-green-400 font-bold text-sm">v1.3</span> <span class="text-stone-500 ml-2">2023-10-XX</span></div>
+                        <p class="text-stone-400">실시간 현재 종합 승률 표시 기능 추가, 화면공유 주의사항 안내 추가.</p>
+                    </li>
+                    <li class="relative">
+                        <span class="absolute -left-[21px] top-1.5 w-2 h-2 bg-indigo-500 rounded-full"></span>
+                        <div class="mb-1"><span class="text-indigo-400 font-bold text-sm">v1.2</span> <span class="text-stone-500 ml-2">2023-10-XX</span></div>
+                        <p class="text-stone-400">화면 인식(Screen Capture)을 통한 자동 입력 시스템 기반 마련 (Beta 기능 추가).</p>
+                    </li>
+                    <li class="relative">
                         <span class="absolute -left-[21px] top-1.5 w-2 h-2 bg-amber-500 rounded-full"></span>
                         <div class="mb-1"><span class="text-amber-500 font-bold text-sm">v1.1</span> <span class="text-stone-500 ml-2">2023-10-XX</span></div>
                         <p class="text-stone-400">UI 디자인 전면 개편, 업데이트 내역 공간 신설.</p>
                     </li>
                     <li class="relative">
-                        <span class="absolute -left-[21px] top-1.5 w-2 h-2 bg-stone-600 rounded-full"></span>
-                        <div class="mb-1"><span class="text-stone-400 font-bold text-sm">v1.0</span> <span class="text-stone-500 ml-2">2023-10-XX</span></div>
-                        <p class="text-stone-400">티카투카 승률 계산기 최초 릴리즈.</p>
+                        <span class="absolute -left-[21px] top-1.5 w-2 h-2 bg-amber-500 rounded-full"></span>
+                        <div class="mb-1"><span class="text-amber-500 font-bold text-sm">v1.0</span> <span class="text-stone-500 ml-2">2023-10-XX</span></div>
+                        <p class="text-stone-400">최초 릴리즈.</p>
                     </li>
                 </ul>
             </div>
@@ -179,10 +215,65 @@
             currentRoll: null,
             isBonus: false,
             isFirstOverallTurn: true,
-            rerollUsed: { me: false } // 상대방 리롤은 관리하지 않음
+            rerollUsed: { me: false } 
         };
 
         let history = []; 
+
+        // --- 자동화(화면 인식) 상태 관리 ---
+        let captureStream = null;
+        let captureInterval = null;
+
+        function toggleScreenCapture() {
+            const btn = document.getElementById('btnAutoCapture');
+            const videoContainer = document.getElementById('videoPreviewContainer');
+            const videoElement = document.getElementById('screenVideo');
+
+            if (captureStream) {
+                let tracks = captureStream.getTracks();
+                tracks.forEach(track => track.stop());
+                captureStream = null;
+                clearInterval(captureInterval);
+                
+                videoContainer.classList.add('hidden');
+                btn.innerHTML = '<span>📺 화면 인식 자동 입력 켜기 (Beta)</span>';
+                btn.classList.replace('bg-red-900', 'bg-indigo-900');
+                btn.classList.replace('hover:bg-red-800', 'hover:bg-indigo-800');
+            } else {
+                navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
+                    .then(stream => {
+                        captureStream = stream;
+                        videoElement.srcObject = stream;
+                        videoContainer.classList.remove('hidden');
+                        
+                        btn.innerHTML = '<span>🛑 화면 인식 자동 입력 끄기</span>';
+                        btn.classList.replace('bg-indigo-900', 'bg-red-900');
+                        btn.classList.replace('hover:bg-indigo-800', 'hover:bg-red-800');
+
+                        stream.getVideoTracks()[0].onended = () => {
+                            toggleScreenCapture();
+                        };
+
+                        captureInterval = setInterval(processVideoFrame, 1000);
+                    })
+                    .catch(err => {
+                        console.error("화면 캡처 오류:", err);
+                        showAlert("화면 공유 권한이 거부되었거나 오류가 발생했습니다.");
+                    });
+            }
+        }
+
+        function processVideoFrame() {
+            if (!captureStream) return;
+            const video = document.getElementById('screenVideo');
+            const canvas = document.getElementById('captureCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // 추후 여기에 OpenCV.js 분석 로직이 들어갑니다.
+        }
 
         // --- 모달 시스템 ---
         function showAlert(msg) {
@@ -215,7 +306,7 @@
 
         function cloneState(st) { return JSON.parse(JSON.stringify(st)); }
 
-        // --- 점수 계산 ---
+        // --- 점수 및 승률 계산 ---
         function calculateRowScore(row) {
             let counts = {};
             row.forEach(die => { counts[die.val] = (counts[die.val] || 0) + 1; });
@@ -234,6 +325,19 @@
             return calculateRowScore(board[0]) + calculateRowScore(board[1]) + calculateRowScore(board[2]);
         }
 
+        // 전체(현재) 상황의 기본 승률 계산
+        function calculateCurrentGlobalWinRate() {
+            let myTotal = getTotalScore(state.me);
+            let oppTotal = getTotalScore(state.opp);
+            let scoreDiff = myTotal - oppTotal;
+            
+            // 기본 50%에서 점수 차이에 따라 가감 (간단한 휴리스틱)
+            let winRate = 50 + (scoreDiff * 1.5);
+            winRate = Math.min(99.9, Math.max(0.1, winRate));
+            
+            return winRate;
+        }
+
         // --- 상호작용 액션 ---
         function selectRoll(val) {
             if (state.phase !== 'roll') {
@@ -246,14 +350,13 @@
             state.phase = 'place';
             updateUI();
             
-            // 상대 턴일 경우 AI 추천 생략
             if (state.turn === 'me') {
                 analyzeAI(); 
             }
         }
 
         function useReroll() {
-            if (state.turn === 'opp') return; // 상대방 리롤 버튼 동작 방지
+            if (state.turn === 'opp') return; 
             
             if (state.phase !== 'place') {
                 showAlert("주사위를 굴린 후에만 리롤이 가능합니다.");
@@ -290,7 +393,8 @@
             let meTotal = state.me.reduce((sum, r) => sum + r.length, 0);
             let oppTotal = state.opp.reduce((sum, r) => sum + r.length, 0);
             
-            if (meTotal === 9 || oppTotal === 9) {
+            // 티카투카 원작 규칙: 어느 한쪽이라도 9칸을 완전히 채우면 그 즉시 게임 종료
+            if (meTotal >= 9 || oppTotal >= 9) {
                 state.phase = 'gameover';
                 let meScore = getTotalScore(state.me);
                 let oppScore = getTotalScore(state.opp);
@@ -325,14 +429,12 @@
             if (state.isBonus) isShield = true; 
             else if (state.isFirstOverallTurn) isShield = true; 
 
-            // 새 주사위 객체
             let newDie = { 
                 val: state.currentRoll, 
                 shield: isShield,
                 owner: state.turn 
             };
 
-            // 그룹화 삽입 로직: 같은 숫자 바로 뒤에 배치하여 이웃하게 만듦
             let insertionIndex = targetBoard[rowIndex].length;
             let lastIndex = -1;
             for(let i = 0; i < targetBoard[rowIndex].length; i++) {
@@ -344,7 +446,6 @@
 
             let alkkagiOccurred = false;
 
-            // 알까기 판정 (맞은편) - 핵심: "실드 주사위로는 알까기가 불가함"
             if (targetPlayer === state.turn && !isShield) {
                 let enemyBoard = targetPlayer === 'me' ? state.opp : state.me;
                 let beforeLen = enemyBoard[rowIndex].length;
@@ -355,7 +456,6 @@
                 
                 if (beforeLen > enemyBoard[rowIndex].length) {
                     alkkagiOccurred = true;
-                    // 동반 파괴 로직: 방금 삽입한 주사위를 정확히 찾아서 제거
                     targetBoard[rowIndex].splice(insertionIndex, 1);
                 }
             }
@@ -425,7 +525,6 @@
                     let oldMyScore = calculateRowScore(target === player ? targetBoard[r] : enemyBoard[r]);
                     let oldOppScore = calculateRowScore(target === player ? enemyBoard[r] : targetBoard[r]);
 
-                    // 실드 여부 파악 (AI 분석용)
                     let willBeShield = false;
                     if (isBonusContext) willBeShield = true;
                     else if (state.isFirstOverallTurn) willBeShield = true;
@@ -433,7 +532,6 @@
                     let newDie = {val: roll, shield: willBeShield};
                     let tempTargetRow = [...targetBoard[r]];
                     
-                    // AI 시뮬레이션에서도 동일하게 그룹화 삽입 처리
                     let lastIndex = -1;
                     for(let i=0; i<tempTargetRow.length; i++) {
                         if(tempTargetRow[i].val === roll) lastIndex = i;
@@ -447,20 +545,17 @@
                         let oppLoss = 0;
                         let isAlkkagi = false;
                         
-                        // 실드가 아닐 때만 알까기 성립
                         if (!willBeShield) {
                             let tempEnemyRow = enemyBoard[r].filter(d => d.val !== roll || d.shield);
                             oppLoss = oldOppScore - calculateRowScore(tempEnemyRow);
                             isAlkkagi = oppLoss > 0;
                         }
                         
-                        // 알까기 시 방금 넣은 주사위 동반 파괴 시뮬레이션
                         if (isAlkkagi) tempTargetRow.splice(insertionIndex, 1); 
                         
                         let myGain = calculateRowScore(tempTargetRow) - oldMyScore;
                         swing = myGain + oppLoss + (isAlkkagi ? 15 : 0);
                         
-                        // 한 줄 섣불리 채우기 페널티
                         if (tempTargetRow.length === 3 && myGain < 10) swing -= 8;
                         
                     } else { 
@@ -509,7 +604,6 @@
                     let newDie = {val: roll, shield: willBeShield};
                     let tempTargetRow = [...targetBoard[r]];
                     
-                    // AI 분석 그룹화 시뮬레이션 적용
                     let lastIndex = -1;
                     for(let i=0; i<tempTargetRow.length; i++) {
                         if(tempTargetRow[i].val === roll) lastIndex = i;
@@ -529,7 +623,6 @@
                             isAlkkagi = oppLoss > 0;
                         }
                         
-                        // 동반 파괴
                         if (isAlkkagi) tempTargetRow.splice(insertionIndex, 1);
                         
                         let myGain = calculateRowScore(tempTargetRow) - oldMyScore;
@@ -625,7 +718,15 @@
                     "배치할 줄을 클릭하세요.";
             }
 
-            // 리롤 버튼 및 AI 패널 제어 (상대 턴 대응)
+            // 실시간 현재 승률 반영
+            let currentWinRate = calculateCurrentGlobalWinRate();
+            const winRateTextEl = document.getElementById('currentGlobalWinRate');
+            winRateTextEl.innerText = currentWinRate.toFixed(1) + "%";
+            // 승률에 따른 색상 변화 (50% 기준)
+            if(currentWinRate > 55) winRateTextEl.className = "text-sm md:text-base font-black text-green-400 leading-none";
+            else if(currentWinRate < 45) winRateTextEl.className = "text-sm md:text-base font-black text-red-400 leading-none";
+            else winRateTextEl.className = "text-sm md:text-base font-black text-amber-400 leading-none";
+
             const btnReroll = document.getElementById('btnReroll');
             const aiContainer = document.getElementById('aiRecommendation');
 
@@ -639,7 +740,6 @@
                     aiContainer.innerHTML = `<div class="flex items-center justify-center h-full text-stone-500 font-bold"><p>상대방이 보드에 주사위를 배치합니다.</p></div>`;
                 }
             } else {
-                // 내 턴일 때 리롤 버튼
                 if (state.isBonus) {
                     btnReroll.innerText = "리롤 불가(보너스)";
                     btnReroll.className = "bg-stone-700 text-stone-500 text-xs md:text-sm px-3 py-2 rounded-lg font-bold flex-1 cursor-not-allowed";
@@ -655,7 +755,6 @@
                 }
             }
 
-            // 숫자판 비활성화 제어
             const btns = document.querySelectorAll('.btn-num');
             btns.forEach(btn => {
                 if(state.phase === 'place' || state.phase === 'gameover') {
@@ -665,7 +764,6 @@
                 }
             });
 
-            // 선택된 주사위 UI 표시
             const selContainer = document.getElementById('selectedDieContainer');
             if (state.phase === 'place') {
                 selContainer.classList.remove('hidden');
@@ -695,17 +793,12 @@
             updateBoardUI();
         }
 
-        // 클릭 권한 및 시각적 활성화/비활성화 처리
         function getOpacityClass(player) {
             if (state.phase === 'roll' || state.phase === 'gameover') {
                 return 'opacity-50 pointer-events-none cursor-not-allowed';
             }
-            if (state.isBonus) {
-                return ''; // 보너스 주사위면 양쪽 필드 다 놓을 수 있음
-            }
-            if (state.turn !== player) {
-                return 'opacity-50 pointer-events-none cursor-not-allowed';
-            }
+            if (state.isBonus) return ''; 
+            if (state.turn !== player) return 'opacity-50 pointer-events-none cursor-not-allowed';
             return '';
         }
 
@@ -717,7 +810,6 @@
             return '';
         }
 
-        // 연결선 UI를 포함한 슬롯 렌더링 함수
         function renderSlots(player, rowData) {
             let indices = player === 'me' ? [2, 1, 0] : [0, 1, 2];
             let html = `<div class="flex items-center w-full ${player === 'me' ? 'justify-end' : 'justify-start'}">`;
@@ -726,15 +818,12 @@
                 let dataIndex = indices[idx];
                 let die = dataIndex < rowData.length ? rowData[dataIndex] : null;
 
-                // 주사위를 최상단(z-10)에 배치
                 html += `<div class="z-10 relative">` + renderSingleDie(die) + `</div>`;
 
-                // 연결선 UI (Connector) - 주사위 아래(z-0)로 파고들게 음수 마진 적용
                 if (idx < 2) {
                     let nextDataIndex = indices[idx + 1];
                     let nextDie = nextDataIndex < rowData.length ? rowData[nextDataIndex] : null;
 
-                    // 앞뒤 주사위 숫자가 같으면 커넥터 표시
                     if (die && nextDie && die.val === nextDie.val) {
                         let borderColor = player === 'me' ? 'border-green-500' : 'border-red-500';
                         let textColor = player === 'me' ? 'text-green-500' : 'text-red-500';
@@ -743,7 +832,6 @@
                             <span class="text-[8px] md:text-[10px] font-black opacity-90">${die.val}</span>
                         </div>`;
                     } else {
-                        // 숫자가 다르거나 비어있으면 일반 빈 공간
                         html += `<div class="w-1 md:w-2"></div>`; 
                     }
                 }
@@ -756,16 +844,13 @@
             if (die) {
                 let textCol = die.owner === 'me' ? 'text-green-600' : 'text-red-600';
                 let borderClass = 'border-2 border-stone-200';
-                if (die.shield) {
-                    borderClass = die.owner === 'me' ? 'shield-me' : 'shield-opp';
-                }
+                if (die.shield) borderClass = die.owner === 'me' ? 'shield-me' : 'shield-opp';
                 return `<div class="w-8 h-8 md:w-12 md:h-12 lg:w-14 lg:h-14 bg-white rounded-md flex justify-center items-center font-black text-lg md:text-xl lg:text-2xl ${textCol} ${borderClass} dice shadow-md">${die.val}</div>`;
             } else {
                 return `<div class="w-8 h-8 md:w-12 md:h-12 lg:w-14 lg:h-14 bg-black/30 rounded-md flex justify-center items-center border border-dashed border-stone-600"></div>`;
             }
         }
 
-        // 중앙 점수 구조를 가진 통합 보드 렌더링
         function updateBoardUI() {
             const boardContainer = document.getElementById('unifiedBoardContainer');
             boardContainer.innerHTML = '';
@@ -774,26 +859,22 @@
                 let myScore = calculateRowScore(state.me[i]);
                 let oppScore = calculateRowScore(state.opp[i]);
                 
-                // 점수 비교에 따른 화살표 방향
                 let arrow = '<span class="text-stone-600 font-black text-sm md:text-lg">－</span>';
                 if (myScore > oppScore) arrow = '<span class="text-green-500 font-black text-lg md:text-xl">◀</span>';
                 else if (oppScore > myScore) arrow = '<span class="text-red-500 font-black text-lg md:text-xl">▶</span>';
 
                 let rowHtml = `
                 <div class="flex items-center justify-between gap-1 md:gap-4 w-full">
-                    <!-- My Row (Left) -->
                     <div onclick="placeDie('me', ${i})" class="flex-1 row-bg rounded-lg p-1 md:p-2 flex items-center transition row-hover relative ${getHighlightClass('me', i)} ${getOpacityClass('me')}">
                         ${renderSlots('me', state.me[i])}
                     </div>
                     
-                    <!-- Scores (Center) -->
                     <div class="flex flex-col md:flex-row items-center gap-1 md:gap-2 justify-center w-[60px] md:w-[120px]">
                         <div class="bg-stone-900 text-green-400 font-black text-sm md:text-xl rounded-full w-8 h-8 md:w-12 md:h-12 flex items-center justify-center border-2 border-green-900 shadow-inner">${myScore}</div>
                         ${arrow}
                         <div class="bg-stone-900 text-red-400 font-black text-sm md:text-xl rounded-full w-8 h-8 md:w-12 md:h-12 flex items-center justify-center border-2 border-red-900 shadow-inner">${oppScore}</div>
                     </div>
 
-                    <!-- Opp Row (Right) -->
                     <div onclick="placeDie('opp', ${i})" class="flex-1 row-bg rounded-lg p-1 md:p-2 flex items-center transition row-hover relative ${getHighlightClass('opp', i)} ${getOpacityClass('opp')}">
                         ${renderSlots('opp', state.opp[i])}
                     </div>
@@ -806,7 +887,6 @@
             document.getElementById('oppTotalScore').innerText = getTotalScore(state.opp) + "점";
         }
 
-        // 최초 실행
         updateUI();
     </script>
 </body>
