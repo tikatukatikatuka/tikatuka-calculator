@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>티카투카 승률 계산기 v1.5</title>
+    <title>티카투카 승률 계산기 v1.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- OpenCV.js 로드 (비동기) -->
     <script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
@@ -41,7 +41,7 @@
             <div>
                 <h1 class="text-2xl md:text-3xl font-black text-amber-500 flex items-center">
                     🎲 티카투카 승률 계산기 
-                    <span class="ml-3 px-2 py-0.5 bg-stone-700 text-stone-300 text-sm rounded-md font-bold tracking-widest">v1.5</span>
+                    <span class="ml-3 px-2 py-0.5 bg-stone-700 text-stone-300 text-sm rounded-md font-bold tracking-widest">v1.7</span>
                 </h1>
                 <p class="text-stone-400 text-xs md:text-sm mt-1">상황을 입력하면 AI가 최적의 수를 추천합니다.</p>
             </div>
@@ -90,17 +90,27 @@
                     <button id="btnAutoCapture" onclick="toggleScreenCapture()" disabled class="w-full bg-stone-600 text-stone-400 text-xs md:text-sm px-3 py-2 rounded-lg font-bold transition shadow-md flex justify-center items-center gap-2 cursor-not-allowed">
                         <span id="captureBtnText">⏳ 인식 엔진 로딩 중...</span>
                     </button>
-                    <div class="mt-2 text-left text-[10px] md:text-xs text-amber-400/90 leading-tight">
-                        ⚠️ <b>화면공유 주의사항:</b> 16:9의 게임 화면을 전체화면(전체 창모드)으로 딱 켰을 때, 창을 안 움직인 상태에서 화면공유를 해야 정상적으로 주사위가 인식됩니다.
+                    
+                    <div id="captureGuide" class="hidden mt-2 text-left text-[10px] md:text-xs text-amber-400/90 leading-tight">
+                        🖱️ <b>조작법:</b> 영상 속 주사위 위치를 마우스로 클릭하면 빨간 네모가 이동합니다. 주사위가 빨간 네모 안에 쏙 들어가도록 맞춰주세요! 우측 돋보기에 초록색 동그라미가 그려지면 성공입니다.
                     </div>
                     
-                    <div id="videoPreviewContainer" class="hidden mt-3 rounded-lg overflow-hidden border-2 border-indigo-500 relative">
-                        <video id="screenVideo" autoplay muted class="w-full h-auto opacity-80"></video>
-                        <!-- 인식 영역 표시 (빨간 네모) -->
-                        <div id="roiOverlay" class="absolute border-2 border-red-500 shadow-[0_0_10px_red]" style="display:none; pointer-events:none;">
-                            <span class="bg-red-500 text-white text-[10px] absolute -top-4 left-0 px-1 whitespace-nowrap">주사위 인식 영역</span>
+                    <!-- OpenCV 실시간 미리보기 (비디오 + 돋보기 캔버스) -->
+                    <div id="videoPreviewContainer" class="hidden mt-3 flex gap-2">
+                        <!-- 원본 비디오 화면 (클릭해서 ROI 이동 가능) -->
+                        <div id="videoWrapper" class="flex-1 relative cursor-crosshair rounded-lg overflow-hidden border-2 border-indigo-500 bg-black">
+                            <video id="screenVideo" autoplay muted class="w-full h-full object-contain opacity-80"></video>
+                            <div id="roiOverlay" class="absolute border-2 border-red-500 shadow-[0_0_10px_red] bg-red-500/10 pointer-events-none transition-all duration-200">
+                                <span class="bg-red-500 text-white text-[9px] absolute -top-4 left-0 px-1 whitespace-nowrap">인식 구역</span>
+                            </div>
                         </div>
-                        <canvas id="captureCanvas" class="hidden"></canvas>
+                        
+                        <!-- 인식 결과(돋보기) 화면 -->
+                        <div class="w-20 md:w-28 flex flex-col items-center justify-center bg-stone-900 border-2 border-stone-600 rounded-lg p-1">
+                            <span class="text-[9px] md:text-[10px] text-stone-400 mb-1 font-bold">인식 카메라</span>
+                            <canvas id="captureCanvas" class="w-full h-auto bg-black rounded"></canvas>
+                            <span id="detectedCountText" class="text-sm md:text-base font-black text-amber-400 mt-1">대기중</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -150,8 +160,8 @@
                         만약 게임에서 <span class="text-red-400 font-bold">상대방이 선공</span>이라면, 시작 전 반드시 중앙의 <b>'턴 강제 변경'</b> 버튼을 눌러 빨간색 '상대방 차례'로 맞춰주세요. (가장 처음 놓는 주사위 1개만 파괴 불가 '실드 주사위' 판정을 받습니다.)
                     </li>
                     <li>
-                        <strong class="text-white text-sm md:text-base block mb-1">2. 기본 조작법 및 자동화</strong>
-                        주사위가 굴러가면 숫자(1~6) 버튼을 클릭하거나, <b>화면 인식 자동 입력(Beta)</b> 기능을 켜서 프로그램이 화면을 보고 자동으로 숫자를 찾게 할 수 있습니다. AI가 최적의 자리를 노란색 빛으로 추천해 주면, 해당 줄을 직접 클릭해 배치하세요.
+                        <strong class="text-white text-sm md:text-base block mb-1">2. 자동 입력 모드 사용법</strong>
+                        화면 인식 자동 입력 버튼을 누르고 게임 창을 공유하세요. 빨간 네모 안에 굴려진 주사위가 들어가도록 <b>영상을 클릭해서 위치를 맞춰주면</b> 프로그램이 주사위 눈을 읽고 자동으로 숫자를 입력해 줍니다.
                     </li>
                     <li>
                         <strong class="text-white text-sm md:text-base block mb-1">3. 리롤 (다시 굴리기) 보조</strong>
@@ -163,17 +173,16 @@
             <!-- 업데이트 내역 영역 -->
             <div class="bg-stone-800 rounded-xl md:rounded-2xl p-5 md:p-6 border border-stone-700 shadow-lg text-stone-300">
                 <h3 class="text-lg md:text-xl font-bold text-stone-200 mb-4 flex items-center"><span class="mr-2">📝</span> 업데이트 내역</h3>
-                <!-- max-h-[250px] 와 overflow-y-auto 를 추가하여 스크롤 가능하게 만듦 -->
                 <ul class="space-y-4 text-xs md:text-sm border-l-2 border-stone-600 pl-4 max-h-[250px] overflow-y-auto pr-2">
-                    <li class="relative">
+                    <li class="relative opacity-60">
                         <span class="absolute -left-[21px] top-1.5 w-2 h-2 bg-indigo-500 rounded-full"></span>
                         <div class="mb-1"><span class="text-indigo-400 font-bold text-sm">v1.5</span> <span class="text-stone-500 ml-2">2026-06-24</span></div>
-                        <p class="text-stone-300">주사위 눈 자동 인식 및 자동 입력 기능 활성화.</p>
+                        <p class="text-stone-400">주사위 눈 자동 인식 및 자동 입력 기능 활성화.</p>
                     </li>
                     <li class="relative opacity-60">
                         <span class="absolute -left-[21px] top-1.5 w-2 h-2 bg-stone-500 rounded-full"></span>
                         <div class="mb-1"><span class="text-stone-400 font-bold text-sm">v1.4</span> <span class="text-stone-500 ml-2">2026-06-24</span></div>
-                        <p class="text-stone-400">AI 보너스 주사위 판단 로직 개선, 게임 종료 조건 수정, 모바일 UI 최적화.</p>
+                        <p class="text-stone-400">AI 보너스 주사위 판단 로직 개선</p>
                     </li>
                     <li class="relative opacity-60">
                         <span class="absolute -left-[21px] top-1.5 w-2 h-2 bg-stone-500 rounded-full"></span>
@@ -183,12 +192,7 @@
                     <li class="relative opacity-60">
                         <span class="absolute -left-[21px] top-1.5 w-2 h-2 bg-stone-500 rounded-full"></span>
                         <div class="mb-1"><span class="text-stone-400 font-bold text-sm">v1.2</span> <span class="text-stone-500 ml-2">2026-06-24</span></div>
-                        <p class="text-stone-400">화면 인식을 통한 자동 입력 시스템 기반 마련 (Beta 기능 추가).</p>
-                    </li>
-                    <li class="relative opacity-60">
-                        <span class="absolute -left-[21px] top-1.5 w-2 h-2 bg-stone-500 rounded-full"></span>
-                        <div class="mb-1"><span class="text-stone-400 font-bold text-sm">v1.1</span> <span class="text-stone-500 ml-2">2026-06-24</span></div>
-                        <p class="text-stone-400">UI 디자인 전면 개편, 업데이트 내역 공간 신설.</p>
+                        <p class="text-stone-400">화면 인식을 통한 자동 입력 시스템 기반 마련.</p>
                     </li>
                     <li class="relative opacity-60">
                         <span class="absolute -left-[21px] top-1.5 w-2 h-2 bg-stone-500 rounded-full"></span>
@@ -228,6 +232,9 @@
         let captureInterval = null;
         let lastDetectedRoll = 0;
         let detectionDebounce = 0;
+        
+        // 초기 인식 영역 비율 (x, y, w, h)
+        let roiRect = { x: 0.20, y: 0.40, w: 0.08, h: 0.15 }; 
 
         // OpenCV.js가 로드되면 호출되는 콜백 함수
         function onOpenCvReady() {
@@ -238,9 +245,46 @@
             btn.classList.replace('bg-stone-600', 'bg-indigo-900');
             btn.classList.replace('text-stone-400', 'text-white');
             btn.classList.replace('cursor-not-allowed', 'cursor-pointer');
-            btn.classList.remove('hover:bg-indigo-800'); // reset
+            btn.classList.remove('hover:bg-indigo-800'); 
             btn.classList.add('hover:bg-indigo-800');
         }
+
+        // 비디오 클릭 시 인식 영역(빨간 네모) 이동 로직
+        document.getElementById('videoWrapper').onclick = function(e) {
+            if (!captureStream) return;
+            const video = document.getElementById('screenVideo');
+            const rect = video.getBoundingClientRect();
+            
+            // 클릭한 위치의 비디오 내 실제 좌표 계산 (비디오 태그의 object-fit: contain 고려)
+            const videoRatio = video.videoWidth / video.videoHeight;
+            const containerRatio = rect.width / rect.height;
+            
+            let actualWidth, actualHeight, offsetX = 0, offsetY = 0;
+            
+            if (containerRatio > videoRatio) { // 레터박스가 좌우에 생김
+                actualHeight = rect.height;
+                actualWidth = actualHeight * videoRatio;
+                offsetX = (rect.width - actualWidth) / 2;
+            } else { // 레터박스가 상하에 생김
+                actualWidth = rect.width;
+                actualHeight = actualWidth / videoRatio;
+                offsetY = (rect.height - actualHeight) / 2;
+            }
+
+            let clickX = e.clientX - rect.left - offsetX;
+            let clickY = e.clientY - rect.top - offsetY;
+
+            // 클릭 지점을 중심으로 새로운 ROI (비율) 설정
+            let newX = (clickX / actualWidth) - (roiRect.w / 2);
+            let newY = (clickY / actualHeight) - (roiRect.h / 2);
+
+            // 화면 밖으로 나가지 않도록 보정
+            roiRect.x = Math.max(0, Math.min(newX, 1 - roiRect.w));
+            roiRect.y = Math.max(0, Math.min(newY, 1 - roiRect.h));
+            
+            // 즉시 프레임 처리 호출하여 화면 갱신
+            processVideoFrame();
+        };
 
         function toggleScreenCapture() {
             if (!cvReady) {
@@ -250,8 +294,8 @@
 
             const btn = document.getElementById('btnAutoCapture');
             const videoContainer = document.getElementById('videoPreviewContainer');
+            const guide = document.getElementById('captureGuide');
             const videoElement = document.getElementById('screenVideo');
-            const overlay = document.getElementById('roiOverlay');
 
             if (captureStream) {
                 // 끄기
@@ -261,18 +305,18 @@
                 clearInterval(captureInterval);
                 
                 videoContainer.classList.add('hidden');
-                overlay.style.display = 'none';
+                guide.classList.add('hidden');
                 btn.innerHTML = '<span>📺 화면 인식 자동 입력 켜기 (Beta)</span>';
                 btn.classList.replace('bg-red-900', 'bg-indigo-900');
                 btn.classList.replace('hover:bg-red-800', 'hover:bg-indigo-800');
             } else {
-                // 켜기 (브라우저 화면 공유 요청)
+                // 켜기
                 navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
                     .then(stream => {
                         captureStream = stream;
                         videoElement.srcObject = stream;
                         videoContainer.classList.remove('hidden');
-                        overlay.style.display = 'block';
+                        guide.classList.remove('hidden');
                         
                         btn.innerHTML = '<span>🛑 화면 인식 자동 입력 끄기</span>';
                         btn.classList.replace('bg-indigo-900', 'bg-red-900');
@@ -282,8 +326,7 @@
                             toggleScreenCapture();
                         };
 
-                        // 0.5초마다 화면 분석 루프 실행
-                        captureInterval = setInterval(processVideoFrame, 500);
+                        captureInterval = setInterval(processVideoFrame, 300); // 0.3초마다 캡처
                     })
                     .catch(err => {
                         console.error("화면 캡처 오류:", err);
@@ -293,85 +336,112 @@
         }
 
         function processVideoFrame() {
-            if (!captureStream || !cvReady || state.phase !== 'roll' || state.turn === 'opp') return;
+            if (!captureStream || !cvReady) return;
             
             const video = document.getElementById('screenVideo');
-            const canvas = document.getElementById('captureCanvas');
+            const debugCanvas = document.getElementById('captureCanvas');
             const overlay = document.getElementById('roiOverlay');
+            const countText = document.getElementById('detectedCountText');
             
             if (video.videoWidth === 0 || video.videoHeight === 0) return;
 
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // 보이지 않는 원본 크기 캔버스 생성 및 비디오 프레임 그리기
+            const hiddenCanvas = document.createElement('canvas');
+            hiddenCanvas.width = video.videoWidth;
+            hiddenCanvas.height = video.videoHeight;
+            const ctx = hiddenCanvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(video, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
             
-            // QHD 사진 기준 방금 굴린 왼쪽 주사위 트레이 위치(ROI 비율)
-            // 좌상단 시작점: x 15%, y 45%, 너비 12%, 높이 20%
-            const roiX = Math.floor(canvas.width * 0.15);
-            const roiY = Math.floor(canvas.height * 0.45);
-            const roiW = Math.floor(canvas.width * 0.12);
-            const roiH = Math.floor(canvas.height * 0.20);
+            // ROI(인식 영역) 픽셀 좌표 계산
+            const rx = Math.floor(hiddenCanvas.width * roiRect.x);
+            const ry = Math.floor(hiddenCanvas.height * roiRect.y);
+            const rw = Math.floor(hiddenCanvas.width * roiRect.w);
+            const rh = Math.floor(hiddenCanvas.height * roiRect.h);
 
-            // 미리보기 영상 위에 빨간 박스 가이드 그려주기 (비율로 위치 매핑)
-            const videoRect = video.getBoundingClientRect();
-            overlay.style.left = (videoRect.left + (videoRect.width * 0.15)) + 'px';
-            overlay.style.top = (videoRect.top + (videoRect.height * 0.45)) + 'px';
-            overlay.style.width = (videoRect.width * 0.12) + 'px';
-            overlay.style.height = (videoRect.height * 0.20) + 'px';
+            // 비디오 화면 위에 빨간 네모 박스 위치 업데이트
+            const rect = video.getBoundingClientRect();
+            const videoRatio = video.videoWidth / video.videoHeight;
+            const containerRatio = rect.width / rect.height;
+            let actualWidth, actualHeight, offsetX = 0, offsetY = 0;
+            if (containerRatio > videoRatio) {
+                actualHeight = rect.height; actualWidth = actualHeight * videoRatio; offsetX = (rect.width - actualWidth) / 2;
+            } else {
+                actualWidth = rect.width; actualHeight = actualWidth / videoRatio; offsetY = (rect.height - actualHeight) / 2;
+            }
+            overlay.style.left = (offsetX + (actualWidth * roiRect.x)) + 'px';
+            overlay.style.top = (offsetY + (actualHeight * roiRect.y)) + 'px';
+            overlay.style.width = (actualWidth * roiRect.w) + 'px';
+            overlay.style.height = (actualHeight * roiRect.h) + 'px';
 
             try {
                 // OpenCV 처리 영역
-                let src = cv.imread(canvas);
-                let rect = new cv.Rect(roiX, roiY, roiW, roiH);
-                let roiMat = src.roi(rect);
+                let src = cv.imread(hiddenCanvas);
+                let rectCv = new cv.Rect(rx, ry, rw, rh);
+                let roiMat = src.roi(rectCv);
                 
-                // 흑백 변환 후 밝기(Threshold)를 조절해 점(동그라미) 찾기
+                // 흑백 변환 및 이진화 (배경 분리)
                 let gray = new cv.Mat();
                 cv.cvtColor(roiMat, gray, cv.COLOR_RGBA2GRAY);
-                
-                // 주사위 면은 매우 밝고(하얗고), 점은 어두움(빨강/초록)
-                // THRESH_BINARY_INV를 사용해 어두운 점들을 흰색으로 반전 추출
                 let binary = new cv.Mat();
-                cv.threshold(gray, binary, 120, 255, cv.THRESH_BINARY_INV);
+                // 150 기준: 주사위 흰색 면(>150)은 검은색으로, 점과 배경(<150)은 흰색으로 반전
+                cv.threshold(gray, binary, 150, 255, cv.THRESH_BINARY_INV);
                 
                 let contours = new cv.MatVector();
                 let hierarchy = new cv.Mat();
-                cv.findContours(binary, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+                cv.findContours(binary, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
                 
+                let dst = new cv.Mat();
+                cv.cvtColor(roiMat, dst, cv.COLOR_RGBA2RGB); // 디버그 캔버스에 그릴 원본 이미지 복사
+
                 let dotCount = 0;
-                // 발견된 덩어리(윤곽선) 중에서 점(Dot) 크기 정도 되는 것만 카운트
                 for (let i = 0; i < contours.size(); ++i) {
                     let cnt = contours.get(i);
                     let area = cv.contourArea(cnt);
-                    // 1920x1080, QHD 등 다양한 해상도를 고려해 면적 기준 여유있게 (예: 50~1500px)
-                    if (area > 30 && area < 2000) {
-                        dotCount++;
+                    
+                    // 점 크기 필터링 (너무 작거나 크면 제외)
+                    if (area >= 10 && area <= 800) {
+                        let perimeter = cv.arcLength(cnt, true);
+                        if (perimeter > 0) {
+                            // 원형 판별 공식: 동그라미에 가까울수록 1에 가까워짐
+                            let circularity = (4 * Math.PI * area) / (perimeter * perimeter);
+                            if (circularity > 0.4) { // 동그라미 형태면 카운트
+                                dotCount++;
+                                let color = new cv.Scalar(0, 255, 0); // 초록색 테두리
+                                cv.drawContours(dst, contours, i, color, 2, cv.LINE_8, hierarchy, 0);
+                            }
+                        }
                     }
                 }
                 
-                // 1~6 사이의 점이 발견되었을 때
-                if (dotCount >= 1 && dotCount <= 6) {
-                    if (dotCount === lastDetectedRoll) {
-                        detectionDebounce++;
-                        // 같은 숫자가 3번(약 1.5초) 연속 감지되면 확정 (깜빡임 오류 방지)
-                        if (detectionDebounce === 3) {
-                            console.log("주사위 인식 완료:", dotCount);
-                            selectRoll(dotCount);
-                            detectionDebounce = 0;
-                            lastDetectedRoll = 0;
+                // 디버그 카메라(돋보기)에 출력
+                cv.imshow('captureCanvas', dst); 
+                countText.innerText = dotCount > 0 ? dotCount + "개 인식됨" : "대기중";
+                if(dotCount > 0) countText.className = "text-sm md:text-base font-black text-green-400 mt-1";
+                else countText.className = "text-sm md:text-base font-black text-amber-400 mt-1";
+
+                // 내 턴이고 주사위 배치 단계가 아닐 때만 자동 입력 수행
+                if (state.turn === 'me' && state.phase === 'roll') {
+                    if (dotCount >= 1 && dotCount <= 6) {
+                        if (dotCount === lastDetectedRoll) {
+                            detectionDebounce++;
+                            // 같은 숫자가 4번 연속(약 1.2초) 감지되면 확정 (잘못된 클릭 방지)
+                            if (detectionDebounce === 4) {
+                                selectRoll(dotCount);
+                                detectionDebounce = 0;
+                                lastDetectedRoll = 0;
+                            }
+                        } else {
+                            lastDetectedRoll = dotCount;
+                            detectionDebounce = 1;
                         }
                     } else {
-                        lastDetectedRoll = dotCount;
-                        detectionDebounce = 1;
+                        lastDetectedRoll = 0;
+                        detectionDebounce = 0;
                     }
-                } else {
-                    lastDetectedRoll = 0;
-                    detectionDebounce = 0;
                 }
 
-                // 메모리 누수 방지 (중요)
-                roiMat.delete(); gray.delete(); binary.delete(); contours.delete(); hierarchy.delete(); src.delete();
+                // 메모리 해제
+                roiMat.delete(); gray.delete(); binary.delete(); contours.delete(); hierarchy.delete(); src.delete(); dst.delete();
             } catch (err) {
                 console.error("OpenCV 처리 에러:", err);
             }
@@ -462,6 +532,11 @@
             state.currentRoll = null;
             state.phase = 'roll';
             window.bestRecommendation = null;
+            
+            // 리롤 시 자동인식을 위해 값 초기화
+            lastDetectedRoll = 0;
+            detectionDebounce = 0;
+            
             updateUI();
         }
 
@@ -472,6 +547,8 @@
             state.currentRoll = null;
             state.isBonus = false;
             window.bestRecommendation = null;
+            lastDetectedRoll = 0;
+            detectionDebounce = 0;
             updateUI();
         }
 
@@ -586,6 +663,8 @@
                 };
                 history = [];
                 window.bestRecommendation = null;
+                lastDetectedRoll = 0;
+                detectionDebounce = 0;
                 updateUI();
             });
         }
@@ -634,7 +713,7 @@
                         if (isAlkkagi) tempTargetRow.splice(insertionIndex, 1); 
                         
                         let myGain = calculateRowScore(tempTargetRow) - oldMyScore;
-                        swing = myGain + oppLoss + (isAlkkagi ? 15 : 0);
+                        swing = myGain + oppLoss + (isAlkkagi ? oppLoss * 1.5 : 0);
                         if (tempTargetRow.length === 3 && myGain < 10) swing -= 8;
                         
                     } else { 
@@ -706,11 +785,16 @@
                         if (isAlkkagi) tempTargetRow.splice(insertionIndex, 1);
                         
                         let myGain = calculateRowScore(tempTargetRow) - oldMyScore;
-                        swing = myGain + oppLoss + (isAlkkagi ? 15 : 0);
+                        
+                        let alkkagiBonus = isAlkkagi ? oppLoss * 1.5 : 0;
+                        swing = myGain + oppLoss + alkkagiBonus;
                         
                         if (tempTargetRow.length === 3 && myGain < 10) {
                             swing -= 8;
                             detailText = `(득점 낮음 & 공간 상실 페널티)`;
+                        } else if (isAlkkagi) {
+                            if (oppLoss <= 2) detailText = `(상대 낮은 수 파괴는 손해일 수 있음!)`;
+                            else detailText = `(상대 점수 ${oppLoss}점 폭파!)`;
                         }
 
                         let newScoreDiff = currentScoreDiff + myGain + oppLoss;
